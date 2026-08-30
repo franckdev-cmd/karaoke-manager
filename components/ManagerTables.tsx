@@ -435,26 +435,26 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
           <Logo size="sm" align="left" customSrc={logoUrl} scale={logoScale} />
         </div>
         {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, marginBottom: 14 }}>
           <button onClick={() => router.push('/onboarding/mode')} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999,
             border: '1px solid var(--surface-border)', background: '#fff', fontSize: 12.5, fontWeight: 600,
-            color: 'var(--ink-soft)', cursor: 'pointer'
+            color: 'var(--ink-soft)', cursor: 'pointer', whiteSpace: 'nowrap'
           }}>
             🏠 Accueil
           </button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <button onClick={() => router.push('/settings')} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999,
               border: '1px solid var(--surface-border)', background: '#fff', fontSize: 12.5, fontWeight: 600,
-              color: 'var(--ink-soft)', cursor: 'pointer'
+              color: 'var(--ink-soft)', cursor: 'pointer', whiteSpace: 'nowrap'
             }}>
               ⚙ Paramètres
             </button>
             <button onClick={handleLogout} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999,
               border: '1px solid var(--surface-border)', background: '#fff', fontSize: 12.5, fontWeight: 600,
-              color: 'var(--ink-soft)', cursor: 'pointer'
+              color: 'var(--ink-soft)', cursor: 'pointer', whiteSpace: 'nowrap'
             }}>
               Déconnexion ⏻
             </button>
@@ -462,7 +462,7 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
         </div>
 
         {/* En-tête */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
           <div>
             <h1 className="display" style={{ fontSize: 24, margin: 0 }}>{venueName}</h1>
             <p style={{ color: 'var(--ink-soft)', fontSize: 13, margin: '4px 0 0' }}>Cycle n°{rotation.cycleNumber}</p>

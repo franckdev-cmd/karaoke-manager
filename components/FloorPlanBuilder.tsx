@@ -186,7 +186,7 @@ export default function FloorPlanBuilder({
         <div style={{ marginBottom: 18 }}>
           <Logo size="sm" align="left" customSrc={logoUrl} scale={logoScale} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div>
             <button onClick={() => router.push('/onboarding/mode')} style={{
               display: 'block', border: 'none', background: 'none', color: 'var(--accent)', fontWeight: 700,

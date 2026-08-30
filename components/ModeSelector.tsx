@@ -109,7 +109,10 @@ export default function ModeSelector({
       justifyContent: 'center', background: 'radial-gradient(circle at 80% 10%, #fdf0f8 0%, #ffffff 55%)',
       padding: '40px 20px'
     }}>
-      <div style={{ position: 'fixed', top: 20, right: 20, display: 'flex', gap: 8, zIndex: 10 }}>
+      <div style={{
+        position: 'fixed', top: 'max(20px, env(safe-area-inset-top))', right: 'max(20px, env(safe-area-inset-right))',
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8, zIndex: 10, maxWidth: 'calc(100vw - 40px)'
+      }}>
         <button onClick={() => router.push('/settings')} style={navBtnStyle}>⚙ Paramètres</button>
         <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
       </div>
@@ -134,7 +137,7 @@ export default function ModeSelector({
       </div>
 
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 640, width: '100%' }}>
-        <div className="anim-slide-in-left" style={{ animationDelay: '.38s', flex: 1, minWidth: 240 }}>
+        <div className="anim-slide-in-left" style={{ animationDelay: '2.3s', flex: 1, minWidth: 240 }}>
           <div
             style={cardStyle('singers')}
             onMouseEnter={() => setHovered('singers')}
@@ -161,7 +164,7 @@ export default function ModeSelector({
           </div>
         </div>
 
-        <div className="anim-slide-in-left" style={{ animationDelay: '.2s', flex: 1, minWidth: 240 }}>
+        <div className="anim-slide-in-left" style={{ animationDelay: '.3s', flex: 1, minWidth: 240 }}>
           <div
             style={cardStyle('tables')}
             onMouseEnter={() => setHovered('tables')}

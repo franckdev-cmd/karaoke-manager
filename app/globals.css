@@ -54,7 +54,10 @@ button { font-family: inherit; }
 ::selection { background: var(--accent-soft); color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  *:not(.anim-fade-slide-down):not(.anim-slide-in-left) {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* Effet lumineux au survol — boutons d'action (salles, tables...) */
@@ -108,4 +111,19 @@ button { font-family: inherit; }
 .anim-slide-in-left {
   opacity: 0;
   animation: slideInFromLeft .55s cubic-bezier(.16,.8,.3,1) forwards;
+}
+
+/* Sur iPhone, Safari zoome automatiquement toute la page dès qu'on touche un champ
+   de saisie dont la taille de texte est inférieure à 16px — ça casse complètement
+   l'affichage (l'app semble "mal s'afficher" après un tap). On force 16px partout,
+   avec !important pour que ça l'emporte sur les tailles fixées en ligne dans le code. */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Empêche le débordement horizontal général sur petit écran (zoom pincé, éléments
+   qui dépassent légèrement la largeur de l'écran, etc.) */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
 }
