@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap');
+
+:root {
+  /* Fond clair, jamais gris-bootstrap : léger voile violet */
+  --bg: #ffffff;
+  --bg-soft: #f9f6ff;
+  --surface: #ffffff;
+  --surface-border: #ece4fb;
+
+  --ink: #1b1130;
+  --ink-soft: #6b6180;
+  --ink-faint: #a89fbd;
+
+  /* Accent signature : violet -> rose, cohérent avec l'identité karaoké existante */
+  --accent: #7c3aed;
+  --accent-2: #ec4899;
+  --accent-gradient: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  --accent-soft: #f3ebff;
+
+  --gold: #f0b429;
+  --success: #16a34a;
+  --danger: #e11d48;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-card: 0 8px 30px rgba(123, 58, 237, 0.08);
+  --shadow-hover: 0 14px 40px rgba(123, 58, 237, 0.16);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .display {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.mono { font-family: 'DM Mono', monospace; }
+
+a { color: inherit; }
+
+button { font-family: inherit; }
+
+::selection { background: var(--accent-soft); color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* Effet lumineux au survol — boutons d'action (salles, tables...) */
+.glow-hover {
+  transition: box-shadow .2s ease, transform .2s ease, filter .2s ease;
+}
+.glow-hover:hover {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 8px 22px rgba(124, 58, 237, .35);
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+.glow-hover:active {
+  transform: translateY(0);
+}
+
+/* Dépliage animé (cartes de table, panneaux plan de salle / file d'attente) */
+.collapsible {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height .32s ease, opacity .22s ease;
+}
+.collapsible.open {
+  max-height: 3000px;
+  opacity: 1;
+}
+
+.chevron-rotate {
+  display: inline-block;
+  transition: transform .25s ease;
+}
+.chevron-rotate.open {
+  transform: rotate(180deg);
+}
