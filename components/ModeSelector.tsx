@@ -117,7 +117,7 @@ export default function ModeSelector({
         <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
       </div>
 
-      <div className="anim-fade-slide-down" style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520 }}>
+      <div className="anim-fade-slide-down" style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520, animationDelay: '.15s' }}>
         <div style={{ marginBottom: 22 }}>
           <Logo size="md" customSrc={logoUrl} scale={logoScale} />
         </div>
@@ -137,7 +137,7 @@ export default function ModeSelector({
       </div>
 
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 640, width: '100%' }}>
-        <div className="anim-slide-in-left" style={{ animationDelay: '2.3s', flex: 1, minWidth: 240 }}>
+        <div className="anim-slide-in-left" style={{ animationDelay: '1.5s', flex: 1, minWidth: 240 }}>
           <div
             style={cardStyle('singers')}
             onMouseEnter={() => setHovered('singers')}
@@ -164,7 +164,7 @@ export default function ModeSelector({
           </div>
         </div>
 
-        <div className="anim-slide-in-left" style={{ animationDelay: '.3s', flex: 1, minWidth: 240 }}>
+        <div className="anim-slide-in-left" style={{ animationDelay: '.5s', flex: 1, minWidth: 240 }}>
           <div
             style={cardStyle('tables')}
             onMouseEnter={() => setHovered('tables')}
