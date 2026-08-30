@@ -7,6 +7,7 @@ export type Venue = {
   mode: VenueMode | null
   singers_qr_code: string | null
   logo_url: string | null
+  logo_scale: number
   onboarding_done: boolean
   created_at: string
 }

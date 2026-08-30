@@ -8,16 +8,18 @@ type Props = {
   venueId: string
   initialName: string
   initialLogoUrl: string | null
+  initialLogoScale: number
   userEmail: string
 }
 
-export default function SettingsForm({ venueId, initialName, initialLogoUrl, userEmail }: Props) {
+export default function SettingsForm({ venueId, initialName, initialLogoUrl, initialLogoScale, userEmail }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState(initialName)
   const [logoUrl, setLogoUrl] = useState<string | null>(initialLogoUrl)
+  const [logoScale, setLogoScale] = useState(initialLogoScale)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -41,7 +43,7 @@ export default function SettingsForm({ venueId, initialName, initialLogoUrl, use
   const save = async () => {
     setBusy(true); setError(''); setSaved(false)
     const { error: err } = await supabase.from('venues')
-      .update({ name: name.trim() || initialName, logo_url: logoUrl })
+      .update({ name: name.trim() || initialName, logo_url: logoUrl, logo_scale: logoScale })
       .eq('id', venueId)
     if (err) { setError(err.message); setBusy(false); return }
     setBusy(false)
@@ -59,7 +61,7 @@ export default function SettingsForm({ venueId, initialName, initialLogoUrl, use
         </div>
 
         <div style={{ marginBottom: 22 }}>
-          <Logo size="sm" align="left" />
+          <Logo size="sm" align="left" customSrc={logoUrl} scale={logoScale} />
         </div>
 
         <h1 className="display" style={{ fontSize: 24, margin: '0 0 4px' }}>Profil & Paramètres</h1>
@@ -132,6 +134,26 @@ export default function SettingsForm({ venueId, initialName, initialLogoUrl, use
             ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
           />
+
+          <label style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-soft)', display: 'block', margin: '22px 0 8px' }}>
+            Taille d'affichage
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <input
+              type="range" min={0.6} max={2} step={0.1} value={logoScale}
+              onChange={e => setLogoScale(parseFloat(e.target.value))}
+              style={{ flex: 1, accentColor: '#7c3aed' }}
+            />
+            <span className="mono" style={{ fontSize: 12.5, color: 'var(--ink-soft)', minWidth: 36, textAlign: 'right' }}>
+              {Math.round(logoScale * 100)}%
+            </span>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90,
+            background: 'var(--bg-soft)', borderRadius: 12, padding: '14px 10px', marginBottom: 22
+          }}>
+            <Logo size="md" customSrc={logoUrl} scale={logoScale} />
+          </div>
 
           <button onClick={save} disabled={busy} className="glow-hover" style={{
             width: '100%', marginTop: 10, padding: '13px 18px', borderRadius: 12, border: 'none',

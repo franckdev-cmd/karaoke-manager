@@ -24,6 +24,7 @@ export default async function ChangeModePage() {
       currentMode={venue.mode}
       hasQrCode={!!venue.singers_qr_code}
       logoUrl={venue.logo_url}
+      logoScale={venue.logo_scale}
     />
   )
 }

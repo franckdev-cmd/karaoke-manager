@@ -17,6 +17,7 @@ type Props = {
   venueId: string
   venueName: string
   logoUrl?: string | null
+  logoScale?: number
   initialRooms: Room[]
   initialTables: VenueTable[]
   initialQueue: QueueItemDB[]
@@ -65,7 +66,7 @@ function rotationStateToDb(venueId: string, s: RotationState) {
   }
 }
 
-export default function ManagerTables({ venueId, venueName, logoUrl, initialRooms, initialTables, initialQueue, initialRotation }: Props) {
+export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, initialRooms, initialTables, initialQueue, initialRotation }: Props) {
   const supabase = createClient()
   const router = useRouter()
   const [rooms, setRooms] = useState(initialRooms)
@@ -431,7 +432,7 @@ export default function ManagerTables({ venueId, venueName, logoUrl, initialRoom
     <div style={{ minHeight: '100vh', background: 'var(--bg-soft)', padding: '32px 20px' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <div style={{ marginBottom: 18 }}>
-          <Logo size="sm" align="left" customSrc={logoUrl} />
+          <Logo size="sm" align="left" customSrc={logoUrl} scale={logoScale} />
         </div>
         {/* Navigation */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>

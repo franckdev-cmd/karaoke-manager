@@ -42,6 +42,7 @@ export default async function ManagerPage() {
       venueId={venue.id}
       venueName={venue.name}
       logoUrl={venue.logo_url}
+      logoScale={venue.logo_scale}
       initialRooms={rooms ?? []}
       initialTables={tables ?? []}
       initialQueue={queue ?? []}

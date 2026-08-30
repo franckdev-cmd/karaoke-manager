@@ -65,8 +65,8 @@ function TablesIcon({ active }: { active: boolean }) {
 }
 
 export default function ModeSelector({
-  venueId, currentMode = null, hasQrCode = false, logoUrl = null
-}: { venueId: string; currentMode?: VenueMode | null; hasQrCode?: boolean; logoUrl?: string | null }) {
+  venueId, currentMode = null, hasQrCode = false, logoUrl = null, logoScale = 1
+}: { venueId: string; currentMode?: VenueMode | null; hasQrCode?: boolean; logoUrl?: string | null; logoScale?: number }) {
   const router = useRouter()
   const [hovered, setHovered] = useState<VenueMode | null>(null)
   const [loading, setLoading] = useState<VenueMode | null>(null)
@@ -86,6 +86,12 @@ export default function ModeSelector({
     router.push(mode === 'singers' ? '/onboarding/singers' : '/onboarding/tables')
   }
 
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   const cardStyle = (mode: VenueMode): React.CSSProperties => ({
     flex: 1, minWidth: 240, background: '#fff', borderRadius: 20,
     border: `2px solid ${hovered === mode ? 'transparent' : 'var(--surface-border)'}`,
@@ -103,9 +109,14 @@ export default function ModeSelector({
       justifyContent: 'center', background: 'radial-gradient(circle at 80% 10%, #fdf0f8 0%, #ffffff 55%)',
       padding: '40px 20px'
     }}>
+      <div style={{ position: 'fixed', top: 20, right: 20, display: 'flex', gap: 8, zIndex: 10 }}>
+        <button onClick={() => router.push('/settings')} style={navBtnStyle}>⚙ Paramètres</button>
+        <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520 }}>
         <div style={{ marginBottom: 22 }}>
-          <Logo size="md" customSrc={logoUrl} />
+          <Logo size="md" customSrc={logoUrl} scale={logoScale} />
         </div>
         <div style={{
           display: 'inline-block', fontSize: 12, fontWeight: 700, letterSpacing: 1.5,
@@ -175,4 +186,10 @@ export default function ModeSelector({
       </div>
     </div>
   )
+}
+
+const navBtnStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999,
+  border: '1px solid var(--surface-border)', background: '#fff', fontSize: 12.5, fontWeight: 600,
+  color: 'var(--ink-soft)', cursor: 'pointer'
 }

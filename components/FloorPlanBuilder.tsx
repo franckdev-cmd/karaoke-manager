@@ -20,8 +20,8 @@ function genTableCode() {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 
 export default function FloorPlanBuilder({
-  venueId, logoUrl = null, initialRooms, initialTables
-}: { venueId: string; logoUrl?: string | null; initialRooms: RoomRow[]; initialTables: TableRow[] }) {
+  venueId, logoUrl = null, logoScale = 1, initialRooms, initialTables
+}: { venueId: string; logoUrl?: string | null; logoScale?: number; initialRooms: RoomRow[]; initialTables: TableRow[] }) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -184,7 +184,7 @@ export default function FloorPlanBuilder({
     <div style={{ minHeight: '100vh', background: 'var(--bg-soft)', padding: '40px 20px' }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <div style={{ marginBottom: 18 }}>
-          <Logo size="sm" align="left" customSrc={logoUrl} />
+          <Logo size="sm" align="left" customSrc={logoUrl} scale={logoScale} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div>

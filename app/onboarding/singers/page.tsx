@@ -29,7 +29,7 @@ export default async function SingersOnboardingPage() {
         boxShadow: 'var(--shadow-card)', padding: '40px 36px', textAlign: 'center', maxWidth: 380, width: '100%'
       }}>
         <div style={{ marginBottom: 20 }}>
-          <Logo size="sm" customSrc={venue.logo_url} />
+          <Logo size="sm" customSrc={venue.logo_url} scale={venue.logo_scale} />
         </div>
         <h1 className="display" style={{ fontSize: 22, margin: '0 0 8px' }}>Ton QR code est prêt</h1>
         <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', margin: '0 0 24px' }}>

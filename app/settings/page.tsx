@@ -20,6 +20,7 @@ export default async function SettingsPage() {
       venueId={venue.id}
       initialName={venue.name}
       initialLogoUrl={venue.logo_url}
+      initialLogoScale={venue.logo_scale}
       userEmail={user.email ?? ''}
     />
   )

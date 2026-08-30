@@ -5,18 +5,25 @@ type Props = {
   withWordmark?: boolean
   align?: 'center' | 'left'
   customSrc?: string | null
+  scale?: number
 }
 
+// Tailles de base agrandies pour une meilleure présence visuelle ; `scale` permet
+// ensuite à chaque établissement d'ajuster encore depuis les Paramètres.
 const SIZES = {
-  sm: { icon: 30, gap: 8, title: 14, sub: 9 },
-  md: { icon: 42, gap: 10, title: 18, sub: 10.5 },
-  lg: { icon: 56, gap: 12, title: 23, sub: 12 }
+  sm: { icon: 40, gap: 10, title: 17, sub: 10 },
+  md: { icon: 56, gap: 13, title: 23, sub: 12 },
+  lg: { icon: 76, gap: 16, title: 30, sub: 14 }
 }
 
 let uid = 0
 
-export default function Logo({ size = 'md', withWordmark, align = 'center', customSrc }: Props) {
-  const s = SIZES[size]
+export default function Logo({ size = 'md', withWordmark, align = 'center', customSrc, scale = 1 }: Props) {
+  const base = SIZES[size]
+  const s = {
+    icon: base.icon * scale, gap: base.gap * scale,
+    title: base.title * scale, sub: base.sub * scale
+  }
   // Un logo perso a vocation à représenter la marque à lui seul : par défaut on masque
   // le wordmark "Karaoké Manager" dans ce cas, sauf si explicitement demandé.
   const showWordmark = withWordmark ?? !customSrc

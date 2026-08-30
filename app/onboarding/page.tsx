@@ -28,5 +28,5 @@ export default async function OnboardingPage() {
   if (venue?.mode === 'tables') redirect('/onboarding/tables')
   if (venue?.mode === 'singers') redirect('/onboarding/singers')
 
-  return <ModeSelector venueId={venue!.id} logoUrl={venue!.logo_url} />
+  return <ModeSelector venueId={venue!.id} logoUrl={venue!.logo_url} logoScale={venue!.logo_scale} />
 }
