@@ -114,7 +114,7 @@ export default function ModeSelector({
         <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520 }}>
+      <div className="anim-fade-slide-down" style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520 }}>
         <div style={{ marginBottom: 22 }}>
           <Logo size="md" customSrc={logoUrl} scale={logoScale} />
         </div>
@@ -134,12 +134,13 @@ export default function ModeSelector({
       </div>
 
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 640, width: '100%' }}>
-        <div
-          style={cardStyle('singers')}
-          onMouseEnter={() => setHovered('singers')}
-          onMouseLeave={() => setHovered(h => h === 'singers' ? null : h)}
-          onClick={() => !loading && choose('singers')}
-        >
+        <div className="anim-slide-in-left" style={{ animationDelay: '.38s', flex: 1, minWidth: 240 }}>
+          <div
+            style={cardStyle('singers')}
+            onMouseEnter={() => setHovered('singers')}
+            onMouseLeave={() => setHovered(h => h === 'singers' ? null : h)}
+            onClick={() => !loading && choose('singers')}
+          >
           <SingersIcon active={hovered === 'singers'} />
           <h2 className="display" style={{ fontSize: 19, margin: '18px 0 8px' }}>
             Par chanteurs
@@ -157,14 +158,16 @@ export default function ModeSelector({
           }}>
             {loading === 'singers' ? 'Génération du QR code...' : ''}
           </div>
+          </div>
         </div>
 
-        <div
-          style={cardStyle('tables')}
-          onMouseEnter={() => setHovered('tables')}
-          onMouseLeave={() => setHovered(h => h === 'tables' ? null : h)}
-          onClick={() => !loading && choose('tables')}
-        >
+        <div className="anim-slide-in-left" style={{ animationDelay: '.2s', flex: 1, minWidth: 240 }}>
+          <div
+            style={cardStyle('tables')}
+            onMouseEnter={() => setHovered('tables')}
+            onMouseLeave={() => setHovered(h => h === 'tables' ? null : h)}
+            onClick={() => !loading && choose('tables')}
+          >
           <TablesIcon active={hovered === 'tables'} />
           <h2 className="display" style={{ fontSize: 19, margin: '18px 0 8px' }}>
             Par tables
@@ -181,6 +184,7 @@ export default function ModeSelector({
             opacity: loading === 'tables' ? 1 : 0, transition: 'opacity .15s'
           }}>
             {loading === 'tables' ? 'Préparation...' : ''}
+          </div>
           </div>
         </div>
       </div>
