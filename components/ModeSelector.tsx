@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { VenueMode } from '@/lib/supabase/types'
@@ -70,6 +70,14 @@ export default function ModeSelector({
   const router = useRouter()
   const [hovered, setHovered] = useState<VenueMode | null>(null)
   const [loading, setLoading] = useState<VenueMode | null>(null)
+  // Déclenche l'animation d'entrée via React plutôt que via une classe CSS pure : ça
+  // garantit que le fondu se joue réellement après le premier affichage, sans dépendre
+  // du timing de chargement de la page ou de réglages système.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50)
+    return () => clearTimeout(t)
+  }, [])
 
   const choose = async (mode: VenueMode) => {
     setLoading(mode)
@@ -117,7 +125,12 @@ export default function ModeSelector({
         <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
       </div>
 
-      <div className="anim-fade-slide-down" style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520, animationDelay: '.15s' }}>
+      <div style={{
+        textAlign: 'center', marginBottom: 40, maxWidth: 520,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0)' : 'translateY(-18px)',
+        transition: 'opacity .6s cubic-bezier(.16,.8,.3,1), transform .6s cubic-bezier(.16,.8,.3,1)'
+      }}>
         <div style={{ marginBottom: 22 }}>
           <Logo size="md" customSrc={logoUrl} scale={logoScale} />
         </div>
@@ -137,7 +150,12 @@ export default function ModeSelector({
       </div>
 
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 640, width: '100%' }}>
-        <div className="anim-slide-in-left" style={{ animationDelay: '1.5s', flex: 1, minWidth: 240 }}>
+        <div style={{
+          flex: 1, minWidth: 240,
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateX(0)' : 'translateX(-32px)',
+          transition: 'opacity .55s cubic-bezier(.16,.8,.3,1) 1.5s, transform .55s cubic-bezier(.16,.8,.3,1) 1.5s'
+        }}>
           <div
             style={cardStyle('singers')}
             onMouseEnter={() => setHovered('singers')}
@@ -164,7 +182,12 @@ export default function ModeSelector({
           </div>
         </div>
 
-        <div className="anim-slide-in-left" style={{ animationDelay: '.5s', flex: 1, minWidth: 240 }}>
+        <div style={{
+          flex: 1, minWidth: 240,
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateX(0)' : 'translateX(-32px)',
+          transition: 'opacity .55s cubic-bezier(.16,.8,.3,1) .5s, transform .55s cubic-bezier(.16,.8,.3,1) .5s'
+        }}>
           <div
             style={cardStyle('tables')}
             onMouseEnter={() => setHovered('tables')}
