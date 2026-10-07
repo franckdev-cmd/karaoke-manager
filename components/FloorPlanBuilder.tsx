@@ -325,6 +325,17 @@ export default function FloorPlanBuilder({
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2
                       }}>{t.name}</div>
                       <div style={{ fontSize: planFont.sub, color: 'var(--ink-soft)', lineHeight: 1.2 }}>{t.pax} pers.</div>
+                      <span
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); setTableModal(t.id) }}
+                        title="Paramètres de la table"
+                        style={{
+                          position: 'absolute', bottom: -9, right: -9, width: 24, height: 24, borderRadius: 999,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: '#fff', border: '1px solid var(--surface-border)', boxShadow: '0 2px 6px rgba(0,0,0,.15)',
+                          fontSize: 13, lineHeight: 1, cursor: 'pointer', color: 'var(--accent)', touchAction: 'manipulation'
+                        }}
+                      >⚙</span>
                     </div>
                   </PlanTable>
                 ))}

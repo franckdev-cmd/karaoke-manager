@@ -3,7 +3,8 @@ import { forwardRef } from 'react'
 import { PLAN_ASPECT, TABLE_W, TABLE_RATIO } from '@/lib/floorplan'
 
 // Surface du plan de salle, commune au constructeur et au manager.
-// - proportion fixe (identique partout) ;
+// - proportion fixe (identique partout) et largeur plafonnée à 520 px : sur ordinateur les
+//   tables restent d'une taille raisonnable, sur téléphone le plan prend toute la largeur ;
 // - `container-type: inline-size` : les textes des tables se calent sur la largeur du plan
 //   (unité cqw), donc rien n'est coupé sur petit écran ;
 // - `touch-action: pan-y` : au doigt, on peut toujours faire défiler la page en passant
@@ -15,7 +16,7 @@ export const PlanCanvas = forwardRef<HTMLDivElement, {
     <div
       ref={ref}
       style={{
-        position: 'relative', width: '100%', aspectRatio: `${1} / ${PLAN_ASPECT}`,
+        position: 'relative', width: '100%', maxWidth: 520, margin: '0 auto', aspectRatio: `${1} / ${PLAN_ASPECT}`,
         containerType: 'inline-size',
         background: `
           repeating-linear-gradient(0deg, transparent, transparent 11px, #f1eafc 12px),
