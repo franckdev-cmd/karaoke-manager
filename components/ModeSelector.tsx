@@ -79,6 +79,14 @@ export default function ModeSelector({
     return () => clearTimeout(t)
   }, [])
 
+  // Fondu doux et sobre : légère montée de 14px, courbe d'accélération douce, décalage court
+  const reveal = (delay: number): React.CSSProperties => ({
+    opacity: mounted ? 1 : 0,
+    transform: mounted ? 'translateY(0)' : 'translateY(14px)',
+    transition: `opacity .9s cubic-bezier(.22,.61,.36,1) ${delay}s, transform .9s cubic-bezier(.22,.61,.36,1) ${delay}s`,
+    willChange: 'opacity, transform'
+  })
+
   const choose = async (mode: VenueMode) => {
     setLoading(mode)
     const supabase = createClient()
@@ -108,7 +116,7 @@ export default function ModeSelector({
     padding: '36px 28px', textAlign: 'center', cursor: loading ? 'default' : 'pointer',
     boxShadow: hovered === mode ? 'var(--shadow-hover)' : 'var(--shadow-card)',
     transform: hovered === mode ? 'translateY(-4px)' : 'none',
-    transition: 'all .18s ease', opacity: loading && loading !== mode ? 0.5 : 1
+    transition: 'all .3s cubic-bezier(.22,.61,.36,1)', opacity: loading && loading !== mode ? 0.5 : 1
   })
 
   return (
@@ -125,12 +133,7 @@ export default function ModeSelector({
         <button onClick={handleLogout} style={navBtnStyle}>Déconnexion ⏻</button>
       </div>
 
-      <div style={{
-        textAlign: 'center', marginBottom: 40, maxWidth: 520,
-        opacity: mounted ? 1 : 0,
-        transform: mounted ? 'translateY(0)' : 'translateY(-18px)',
-        transition: 'opacity .6s cubic-bezier(.16,.8,.3,1), transform .6s cubic-bezier(.16,.8,.3,1)'
-      }}>
+      <div className="reveal" style={{ textAlign: 'center', marginBottom: 40, maxWidth: 520, ...reveal(0.1) }}>
         <div style={{ marginBottom: 22 }}>
           <Logo size="md" customSrc={logoUrl} scale={logoScale} />
         </div>
@@ -150,12 +153,7 @@ export default function ModeSelector({
       </div>
 
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 640, width: '100%' }}>
-        <div style={{
-          flex: 1, minWidth: 240,
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateX(0)' : 'translateX(-32px)',
-          transition: 'opacity .55s cubic-bezier(.16,.8,.3,1) 1.5s, transform .55s cubic-bezier(.16,.8,.3,1) 1.5s'
-        }}>
+        <div className="reveal" style={{ flex: 1, minWidth: 240, ...reveal(0.45) }}>
           <div
             style={cardStyle('singers')}
             onMouseEnter={() => setHovered('singers')}
@@ -182,12 +180,7 @@ export default function ModeSelector({
           </div>
         </div>
 
-        <div style={{
-          flex: 1, minWidth: 240,
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateX(0)' : 'translateX(-32px)',
-          transition: 'opacity .55s cubic-bezier(.16,.8,.3,1) .5s, transform .55s cubic-bezier(.16,.8,.3,1) .5s'
-        }}>
+        <div className="reveal" style={{ flex: 1, minWidth: 240, ...reveal(0.7) }}>
           <div
             style={cardStyle('tables')}
             onMouseEnter={() => setHovered('tables')}

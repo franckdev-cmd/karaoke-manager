@@ -10,7 +10,8 @@ import {
 } from '@/lib/rotation'
 import TableSettingsModal, { type TableFormValues } from './TableSettingsModal'
 import TableManageModal from './TableManageModal'
-import { resolveOverlap } from '@/lib/floorplan'
+import { firstFreeSpot, placeTable, moveWithin, repairLayout } from '@/lib/floorplan'
+import { PlanCanvas, PlanTable, planFont } from './PlanCanvas'
 import Logo from './Logo'
 
 type Props = {
@@ -92,6 +93,17 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
   const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ id: string; moved: boolean; startX: number; startY: number } | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+
+  // Remet d'aplomb les anciennes salles (tables qui se touchent ou qui dépassent du bord)
+  useEffect(() => {
+    const fixes: { id: string; x: number; y: number }[] = []
+    for (const r of initialRooms) fixes.push(...repairLayout(initialTables.filter(t => t.room_id === r.id)))
+    if (!fixes.length) return
+    setTables(ts => ts.map(t => { const f = fixes.find(f => f.id === t.id); return f ? { ...t, x: f.x, y: f.y } : t }))
+    fixes.forEach(f => supabase.from('venue_tables').update({ x: f.x, y: f.y }).eq('id', f.id))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const roomById = useMemo(() => new Map(rooms.map(r => [r.id, r])), [rooms])
 
@@ -318,9 +330,9 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
     const nextSortOrder = roomTablesNow.length
       ? Math.max(...roomTablesNow.map(t => t.sort_order ?? 0)) + 1
       : 0
-    const x0 = clamp(15 + Math.random() * 70, 8, 92)
-    const y0 = clamp(15 + Math.random() * 70, 8, 92)
-    const { x, y } = resolveOverlap(roomTablesNow.map(t => ({ x: t.x, y: t.y })), x0, y0, 15, 9 / 16)
+    const spot = firstFreeSpot(roomTablesNow.map(t => ({ x: t.x, y: t.y })))
+    if (!spot.ok) { setError('Cette salle est pleine : supprime une table ou crée une nouvelle salle.'); setBusy(false); setCreatingTableInRoom(null); return }
+    const { x, y } = spot
     const { data, error: err } = await supabase.from('venue_tables')
       .insert({
         venue_id: venueId, room_id: creatingTableInRoom, name: values.name, pax: values.pax,
@@ -399,23 +411,28 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
     const dist = Math.hypot(e.clientX - dragState.current.startX, e.clientY - dragState.current.startY)
     if (!dragState.current.moved && dist < DRAG_THRESHOLD_PX) return
     dragState.current.moved = true
+    setDraggingId(id)
     const rect = canvasRef.current.getBoundingClientRect()
-    const x = clamp(((e.clientX - rect.left) / rect.width) * 100, 4, 96)
-    const y = clamp(((e.clientY - rect.top) / rect.height) * 100, 4, 96)
-    setTables(ts => ts.map(t => t.id === id ? { ...t, x, y } : t))
+    const target = { x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 }
+    setTables(ts => {
+      const me = ts.find(t => t.id === id)
+      if (!me) return ts
+      const others = ts.filter(o => o.id !== id && o.room_id === me.room_id)
+      const next = moveWithin(others, { x: me.x, y: me.y }, target)
+      return ts.map(t => t.id === id ? { ...t, ...next } : t)
+    })
   }
-  const onPointerUp = async (e: React.PointerEvent, id: string) => {
+  const onPointerUp = async (_e: React.PointerEvent, id: string) => {
     const wasDrag = dragState.current?.moved
     dragState.current = null
+    setDraggingId(null)
     if (wasDrag) {
       const t = tables.find(t => t.id === id)
       if (t) {
         const others = tables.filter(o => o.id !== id && o.room_id === t.room_id).map(o => ({ x: o.x, y: o.y }))
-        const resolved = resolveOverlap(others, t.x, t.y, 15, 9 / 16)
-        if (resolved.x !== t.x || resolved.y !== t.y) {
-          setTables(ts => ts.map(tt => tt.id === id ? { ...tt, x: resolved.x, y: resolved.y } : tt))
-        }
-        const { error: err } = await supabase.from('venue_tables').update({ x: resolved.x, y: resolved.y }).eq('id', id)
+        const r = placeTable(others, { x: t.x, y: t.y })
+        if (r.x !== t.x || r.y !== t.y) setTables(ts => ts.map(tt => tt.id === id ? { ...tt, x: r.x, y: r.y } : tt))
+        const { error: err } = await supabase.from('venue_tables').update({ x: r.x, y: r.y }).eq('id', id)
         if (err) {
           console.error('Échec sauvegarde position table', id, err)
           setError(`Position non enregistrée : ${err.message}`)
@@ -549,47 +566,52 @@ export default function ManagerTables({ venueId, venueName, logoUrl, logoScale, 
               )}
             </div>
 
-            <div ref={canvasRef} style={{
-              position: 'relative', width: '100%', aspectRatio: '16 / 9',
-              background: `repeating-linear-gradient(0deg, transparent, transparent 39px, #ece4fb 40px),
-                repeating-linear-gradient(90deg, transparent, transparent 39px, #ece4fb 40px), #fff`,
-              borderRadius: 18, border: '2px dashed var(--surface-border)', overflow: 'hidden', touchAction: 'none'
-            }}>
+            <PlanCanvas ref={canvasRef}>
               {roomFloorTables.map(t => {
                 const count = pendingFor(t.id).length
                 const isCurrent = currentTable?.id === t.id
                 return (
-                  <div key={t.id}
+                  <PlanTable
+                    key={t.id} x={t.x} y={t.y} dragging={draggingId === t.id}
                     onPointerDown={e => onPointerDown(e, t.id)}
                     onPointerMove={e => onPointerMove(e, t.id)}
                     onPointerUp={e => onPointerUp(e, t.id)}
-                    style={{ position: 'absolute', left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%,-50%)', cursor: 'grab', touchAction: 'none' }}>
+                    onPointerCancel={() => { dragState.current = null; setDraggingId(null) }}
+                  >
                     <div style={{
-                      minWidth: 76, padding: '8px 26px 8px 12px', borderRadius: 12, position: 'relative', textAlign: 'center',
+                      width: '100%', height: '100%', borderRadius: 12, position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
                       background: isCurrent ? 'var(--accent-gradient)' : '#fff',
                       border: `2px solid ${isCurrent ? 'transparent' : 'var(--surface-border)'}`,
-                      boxShadow: isCurrent ? '0 6px 16px rgba(124,58,237,.3)' : '0 3px 8px rgba(0,0,0,.06)'
+                      boxShadow: draggingId === t.id ? '0 10px 22px rgba(124,58,237,.3)'
+                        : isCurrent ? '0 6px 16px rgba(124,58,237,.3)' : '0 3px 8px rgba(0,0,0,.06)'
                     }}>
                       {count > 0 && <div style={{
-                        position: 'absolute', top: -7, right: -7, minWidth: 18, height: 18, borderRadius: 999,
+                        position: 'absolute', top: -7, left: -7, minWidth: 18, height: 18, padding: '0 4px', borderRadius: 999,
                         background: isCurrent ? '#fff' : 'var(--accent)', color: isCurrent ? 'var(--accent)' : '#fff',
-                        fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        fontSize: planFont.badge, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 1px 4px rgba(0,0,0,.2)'
                       }}>{count}</div>}
-                      <div style={{ fontWeight: 700, fontSize: 12, color: isCurrent ? '#fff' : 'var(--ink)' }}>{t.name}</div>
+                      <div style={{
+                        fontWeight: 700, fontSize: planFont.name, color: isCurrent ? '#fff' : 'var(--ink)',
+                        maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center'
+                      }}>{t.name}</div>
                       <span
                         onPointerDown={e => e.stopPropagation()}
                         onClick={e => { e.stopPropagation(); setManageTableId(t.id) }}
                         title="Gérer la table"
                         style={{
-                          position: 'absolute', bottom: 2, right: 4, fontSize: 12, cursor: 'pointer',
-                          color: isCurrent ? 'rgba(255,255,255,.85)' : 'var(--ink-faint)'
+                          position: 'absolute', bottom: -9, right: -9, width: 24, height: 24, borderRadius: 999,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: '#fff', border: '1px solid var(--surface-border)', boxShadow: '0 2px 6px rgba(0,0,0,.15)',
+                          fontSize: 13, lineHeight: 1, cursor: 'pointer', color: 'var(--accent)', touchAction: 'manipulation'
                         }}
                       >⚙</span>
                     </div>
-                  </div>
+                  </PlanTable>
                 )
               })}
-            </div>
+            </PlanCanvas>
             <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
               Clique sur ⚙ pour gérer une table — QR, ajouter un chanteur, déplacer, priorité... · glisse-la pour la repositionner.
             </p>

@@ -54,7 +54,7 @@ button { font-family: inherit; }
 ::selection { background: var(--accent-soft); color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
-  *:not(.anim-fade-slide-down):not(.anim-slide-in-left) {
+  *:not(.anim-fade-slide-down):not(.anim-slide-in-left):not(.reveal) {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }

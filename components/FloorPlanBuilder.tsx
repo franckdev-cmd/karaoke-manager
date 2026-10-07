@@ -1,9 +1,10 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import TableSettingsModal, { type TableFormValues } from './TableSettingsModal'
-import { resolveOverlap } from '@/lib/floorplan'
+import { firstFreeSpot, placeTable, moveWithin, repairLayout } from '@/lib/floorplan'
+import { PlanCanvas, PlanTable, planFont } from './PlanCanvas'
 import Logo from './Logo'
 
 type TableRow = {
@@ -16,8 +17,6 @@ function genTableCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 
 export default function FloorPlanBuilder({
   venueId, logoUrl = null, logoScale = 1, initialRooms, initialTables
@@ -40,6 +39,20 @@ export default function FloorPlanBuilder({
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const dragState = useRef<{ id: string; moved: boolean; startX: number; startY: number } | null>(null)
+
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+
+  // Remet d'aplomb les anciennes salles (tables qui se touchent ou qui dépassent du bord)
+  useEffect(() => {
+    const fixes: { id: string; x: number; y: number }[] = []
+    for (const r of initialRooms) {
+      fixes.push(...repairLayout(initialTables.filter(t => t.room_id === r.id)))
+    }
+    if (!fixes.length) return
+    setTables(ts => ts.map(t => { const f = fixes.find(f => f.id === t.id); return f ? { ...t, x: f.x, y: f.y } : t }))
+    fixes.forEach(f => supabase.from('venue_tables').update({ x: f.x, y: f.y }).eq('id', f.id))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const roomTables = tables.filter(t => t.room_id === activeRoomId)
   const editingTable = tableModal && tableModal !== 'new' ? tables.find(t => t.id === tableModal) ?? null : null
@@ -74,13 +87,10 @@ export default function FloorPlanBuilder({
   // ── Tables ──────────────────────────────────────────────────────────────
   const openCreateTable = () => {
     if (!activeRoomId) return
-    const roomTablesNow = tables.filter(t => t.room_id === activeRoomId)
-    setPendingPos(resolveOverlap(
-      roomTablesNow.map(t => ({ x: t.x, y: t.y })),
-      15 + Math.random() * 70,
-      15 + Math.random() * 70,
-      15, 10 / 16
-    ))
+    const spot = firstFreeSpot(tables.filter(t => t.room_id === activeRoomId).map(t => ({ x: t.x, y: t.y })))
+    if (!spot.ok) { setError('Cette salle est pleine : supprime une table ou crée une nouvelle salle.'); return }
+    setError('')
+    setPendingPos({ x: spot.x, y: spot.y })
     setTableModal('new')
   }
 
@@ -148,24 +158,29 @@ export default function FloorPlanBuilder({
     const dist = Math.hypot(e.clientX - dragState.current.startX, e.clientY - dragState.current.startY)
     if (!dragState.current.moved && dist < DRAG_THRESHOLD_PX) return
     dragState.current.moved = true
+    setDraggingId(id)
     const rect = canvasRef.current.getBoundingClientRect()
-    const x = clamp(((e.clientX - rect.left) / rect.width) * 100, 4, 96)
-    const y = clamp(((e.clientY - rect.top) / rect.height) * 100, 4, 96)
-    setTables(ts => ts.map(t => t.id === id ? { ...t, x, y } : t))
+    const target = { x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 }
+    setTables(ts => {
+      const me = ts.find(t => t.id === id)
+      if (!me) return ts
+      const others = ts.filter(o => o.id !== id && o.room_id === me.room_id)
+      const next = moveWithin(others, { x: me.x, y: me.y }, target)
+      return ts.map(t => t.id === id ? { ...t, ...next } : t)
+    })
   }
 
-  const onPointerUp = (e: React.PointerEvent, id: string) => {
+  const onPointerUp = (_e: React.PointerEvent, id: string) => {
     const wasDrag = dragState.current?.moved
     dragState.current = null
+    setDraggingId(null)
     if (wasDrag) {
       const t = tables.find(t => t.id === id)
       if (t) {
         const others = tables.filter(o => o.id !== id && o.room_id === t.room_id).map(o => ({ x: o.x, y: o.y }))
-        const resolved = resolveOverlap(others, t.x, t.y, 15, 10 / 16)
-        if (resolved.x !== t.x || resolved.y !== t.y) {
-          setTables(ts => ts.map(tt => tt.id === id ? { ...tt, x: resolved.x, y: resolved.y } : tt))
-        }
-        persistPosition(id, resolved.x, resolved.y)
+        const r = placeTable(others, { x: t.x, y: t.y })
+        if (r.x !== t.x || r.y !== t.y) setTables(ts => ts.map(tt => tt.id === id ? { ...tt, x: r.x, y: r.y } : tt))
+        persistPosition(id, r.x, r.y)
       }
     } else {
       setTableModal(id)
@@ -282,55 +297,47 @@ export default function FloorPlanBuilder({
         ) : (
           <>
             {/* Plan de salle */}
-            <div
-              ref={canvasRef}
-              style={{
-                position: 'relative', width: '100%', aspectRatio: '16 / 10',
-                background: `
-                  repeating-linear-gradient(0deg, transparent, transparent 39px, #ece4fb 40px),
-                  repeating-linear-gradient(90deg, transparent, transparent 39px, #ece4fb 40px),
-                  #fff`,
-                borderRadius: 20, border: '2px dashed var(--surface-border)',
-                marginBottom: 14, overflow: 'hidden', touchAction: 'none'
-              }}
-            >
-              {roomTables.map(t => (
-                <div
-                  key={t.id}
-                  onPointerDown={e => onPointerDown(e, t.id)}
-                  onPointerMove={e => onPointerMove(e, t.id)}
-                  onPointerUp={e => onPointerUp(e, t.id)}
-                  style={{
-                    position: 'absolute', left: `${t.x}%`, top: `${t.y}%`,
-                    transform: 'translate(-50%, -50%)', cursor: 'grab', userSelect: 'none',
-                    touchAction: 'none'
-                  }}
-                >
-                  <div style={{
-                    minWidth: 88, padding: '10px 14px', borderRadius: 14, position: 'relative',
-                    background: '#fff', border: `2px solid ${t.free_mode ? '#f59e0b' : 'var(--accent)'}`,
-                    boxShadow: '0 4px 14px rgba(124,58,237,.18)', textAlign: 'center'
-                  }}>
-                    {t.free_mode && (
+            <div style={{ marginBottom: 14 }}>
+              <PlanCanvas ref={canvasRef} radius={20}>
+                {roomTables.map(t => (
+                  <PlanTable
+                    key={t.id} x={t.x} y={t.y} dragging={draggingId === t.id}
+                    onPointerDown={e => onPointerDown(e, t.id)}
+                    onPointerMove={e => onPointerMove(e, t.id)}
+                    onPointerUp={e => onPointerUp(e, t.id)}
+                    onPointerCancel={() => { dragState.current = null; setDraggingId(null) }}
+                  >
+                    <div style={{
+                      width: '100%', height: '100%', borderRadius: 12, position: 'relative',
+                      background: '#fff', border: `2px solid ${t.free_mode ? '#f59e0b' : 'var(--accent)'}`,
+                      boxShadow: draggingId === t.id ? '0 10px 24px rgba(124,58,237,.3)' : '0 4px 14px rgba(124,58,237,.18)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      padding: '0 4px', textAlign: 'center', minWidth: 0
+                    }}>
+                      {t.free_mode && (
+                        <div style={{
+                          position: 'absolute', top: -7, right: -7, fontSize: planFont.badge, fontWeight: 800,
+                          background: '#f59e0b', color: '#fff', borderRadius: 999, padding: '1px 5px', lineHeight: 1.3
+                        }}>LIBRE</div>
+                      )}
                       <div style={{
-                        position: 'absolute', top: -8, right: -8, fontSize: 9.5, fontWeight: 800,
-                        background: '#f59e0b', color: '#fff', borderRadius: 999, padding: '2px 6px'
-                      }}>LIBRE</div>
-                    )}
-                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{t.name}</div>
-                    <div style={{ fontSize: 10.5, marginTop: 2, color: 'var(--ink-soft)' }}>{t.pax} pers.</div>
-                  </div>
-                </div>
-              ))}
+                        fontWeight: 700, fontSize: planFont.name, color: 'var(--ink)', maxWidth: '100%',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2
+                      }}>{t.name}</div>
+                      <div style={{ fontSize: planFont.sub, color: 'var(--ink-soft)', lineHeight: 1.2 }}>{t.pax} pers.</div>
+                    </div>
+                  </PlanTable>
+                ))}
 
-              {!roomTables.length && (
-                <div style={{
-                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--ink-faint)', fontSize: 13.5, textAlign: 'center', padding: 20
-                }}>
-                  Aucune table dans cette salle.<br />Clique sur "+ Ajouter une table" ci-dessous.
-                </div>
-              )}
+                {!roomTables.length && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--ink-faint)', fontSize: 13.5, textAlign: 'center', padding: 20
+                  }}>
+                    Aucune table dans cette salle.<br />Clique sur "+ Ajouter une table" ci-dessous.
+                  </div>
+                )}
+              </PlanCanvas>
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
